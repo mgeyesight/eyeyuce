@@ -1,0 +1,2501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>眼屈光发育状态预测系统</title>
+ <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+ <style>
+ * { margin: 0; padding: 0; box-sizing: border-box; }
+ body {
+ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+ min-height: 100vh;
+ padding: 20px;
+ }
+ .container { max-width: 1400px; margin: 0 auto; }
+ .header { text-align: center; color: white; margin-bottom: 30px; }
+ .header h1 { font-size: 2.8em; margin-bottom: 10px; }
+ 
+ .nav-tabs {
+ display: flex;
+ justify-content: center;
+ gap: 10px;
+ margin-bottom: 20px;
+ flex-wrap: wrap;
+ }
+ .nav-tab {
+ padding: 12px 24px;
+ background: rgba(255,255,255,0.2);
+ color: white;
+ border: none;
+ border-radius: 25px;
+ cursor: pointer;
+ font-size: 16px;
+ transition: all 0.3s;
+ }
+ .nav-tab:hover, .nav-tab.active {
+ background: white;
+ color: #667eea;
+ }
+ 
+ .card {
+ background: white;
+ border-radius: 20px;
+ padding: 30px;
+ margin-bottom: 20px;
+ box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+ }
+ .card-title {
+ font-size: 1.4em;
+ color: #333;
+ margin-bottom: 20px;
+ padding-bottom: 10px;
+ border-bottom: 3px solid #667eea;
+ }
+ 
+ .section { display: none; }
+ .section.active { display: block; }
+ 
+ .form-grid {
+ display: grid;
+ grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+ gap: 15px;
+ }
+ .input-group {
+ margin-bottom: 10px;
+ }
+ .input-group label {
+ display: block;
+ margin-bottom: 5px;
+ color: #555;
+ font-weight: 500;
+ font-size: 13px;
+ }
+  .input-group input,
+  .input-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  }
+  
+  /* 语音输入样式 */
+  .input-with-voice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  }
+  .input-with-voice input {
+  flex: 1;
+  }
+  .date-format-input {
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  letter-spacing: 1px;
+  }
+  .date-mask-input {
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+  text-align: center;
+  }
+  .voice-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.3s;
+  flex-shrink: 0;
+  }
+  .voice-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+  .voice-btn.recording {
+  background: #e74c3c;
+  animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+  }
+  .voice-hint {
+  font-size: 11px;
+  color: #999;
+  margin-top: 4px;
+  }
+  
+ 
+ .btn {
+ padding: 12px 30px;
+ border: none;
+ border-radius: 25px;
+ font-size: 15px;
+ cursor: pointer;
+ transition: all 0.3s;
+ font-weight: 600;
+ }
+ .btn-primary {
+ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+ color: white;
+ }
+ .btn-secondary {
+ background: #f0f0f0;
+ color: #555;
+ margin-right: 10px;
+ }
+ 
+ .report-container {
+ background: white;
+ padding: 30px;
+ max-width: 1200px;
+ margin: 0 auto;
+ }
+ @media print {
+ .report-container {
+ padding: 8px 12px;
+ }
+ }
+ .report-header {
+ text-align: center;
+ margin-bottom: 30px;
+ }
+ .report-header h1 {
+ font-size: 28px;
+ color: #333;
+ letter-spacing: 2px;
+ }
+ .patient-info {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 40px;
+ margin-bottom: 20px;
+ padding: 15px 25px;
+ background: #f8f9fa;
+ border-radius: 8px;
+ font-size: 15px;
+ justify-content: space-between;
+ }
+ .patient-info .info-item {
+ white-space: nowrap;
+ flex: 1;
+ text-align: center;
+ }
+ 
+ .data-table {
+ width: 100%;
+ border-collapse: collapse;
+ margin: 20px 0;
+ font-size: 13px;
+ }
+  .data-table th {
+  background: #E8F4F8;
+  color: #333;
+  padding: 8px 6px;
+  text-align: center;
+  border: 1px solid #B8D4E3;
+  font-size: 15px;
+  font-weight: bold;
+  }
+ .data-table th .en {
+ font-size: 10px;
+ opacity: 0.9;
+ display: block;
+ margin-top: 2px;
+ }
+  .data-table td {
+  padding: 6px 6px;
+  text-align: center;
+  border: 1px solid #ddd;
+  font-size: 15px;
+  }
+ .data-table tr:nth-child(even) {
+ background: #f8f9fa;
+ }
+ 
+ .analysis-table {
+ width: 100%;
+ border-collapse: collapse;
+ margin: 20px 0;
+ font-size: 13px;
+ }
+ .analysis-table th {
+ background: #E8F4F8;
+ color: #333;
+ padding: 8px;
+ text-align: center;
+ border: 1px solid #B8D4E3;
+ font-size: 15px;
+ font-weight: bold;
+ }
+  .analysis-table td {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  vertical-align: top;
+  font-size: 15px;
+  }
+ .analysis-table .section-title {
+ background: #E8F4F8;
+ font-weight: bold;
+ color: #333;
+ text-align: center;
+ vertical-align: middle;
+ white-space: nowrap;
+ font-size: 15px;
+ padding: 12px 8px;
+ min-width: 100px;
+ border: 1px solid #B8D4E3;
+ }
+  .analysis-table .subsection {
+  background: #f8f9fa;
+  text-align: left;
+  padding-left: 15px;
+  }
+  
+  .chart-grid {
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ gap: 20px;
+ margin: 20px 0;
+ }
+ @media print {
+ .chart-grid {
+ gap: 10px;
+ margin: 10px 0;
+ }
+ }
+ .chart-box {
+ background: white;
+ border-radius: 10px;
+ padding: 20px;
+ box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+ height: 320px;
+ }
+ .chart-box canvas {
+ max-height: 240px;
+ }
+ 
+ .legend-box {
+ display: flex;
+ justify-content: center;
+ gap: 15px;
+ margin: 15px 0;
+ flex-wrap: wrap;
+ }
+ .legend-item {
+ display: flex;
+ align-items: center;
+ gap: 5px;
+ font-size: 11px;
+ }
+ .legend-color {
+ width: 25px;
+ height: 10px;
+ border-radius: 2px;
+ }
+ 
+ .myopia-scale-container {
+ margin: 60px 0 60px 0;
+ position: relative;
+ }
+ 
+ .myopia-scale {
+ display: flex;
+ border-radius: 8px;
+ overflow: hidden;
+ box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+ }
+ 
+ .scale-item {
+ flex: 1;
+ text-align: center;
+ padding: 20px 8px;
+ color: white;
+ font-size: 12px;
+ font-weight: bold;
+ min-height: 80px;
+ display: flex;
+ flex-direction: column;
+ justify-content: center;
+ border-right: 1px solid rgba(255,255,255,0.3);
+ }
+ .scale-item:last-child { border-right: none; }
+ 
+ .scale-1 { background: #70AD47; }
+ .scale-2 { background: #E6B800; }
+ .scale-3 { background: #F5C518; }
+ .scale-4 { background: #FFC000; }
+ .scale-5 { background: #F08030; }
+ .scale-6 { background: #D03030; }
+ .scale-7 { background: #A02020; }
+ .scale-8 { background: #701010; }
+ 
+  .scale-item .label1 { font-size: 15px; margin-bottom: 5px; }
+  .scale-item .label2 { font-size: 15px; opacity: 0.9; }
+ 
+.eye-marker {
+ position: absolute;
+ transform: translateX(-50%);
+ text-align: center;
+ top: -22px;
+ width: 32px;
+ height: 40px;
+ }
+  
+ .eye-marker-inner {
+ position: relative;
+ width: 100%;
+ height: 100%;
+ }
+  
+ .eye-marker-shape {
+ position: absolute;
+ top: 0;
+ left: 50%;
+ transform: translateX(-50%);
+ width: 28px;
+ height: 28px;
+ background: white;
+ border: 2px solid #333;
+ border-radius: 50% 50% 50% 0;
+ transform: translateX(-50%) rotate(-45deg);
+ box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+ }
+  
+ .eye-label {
+ position: absolute;
+ top: 4px;
+ left: 50%;
+ transform: translateX(-50%);
+ font-size: 16px;
+ font-weight: bold;
+ color: #333;
+ z-index: 2;
+ }
+  
+ .arrow-down {
+ display: none;
+ }
+  
+ .arrow-line {
+ display: none;
+ }
+ 
+  .notes {
+  margin-top: 15px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #666;
+  }
+ .notes h4 { color: #333; margin-bottom: 10px; }
+ 
+.highlight-red { color: #B71C1C; font-weight: bold; }
+ .highlight-green { color: #1B5E20; font-weight: bold; }
+ .highlight-yellow { color: #E65100; font-weight: bold; }
+  .highlight-orange { color: #FF8C00; font-weight: bold; }
+ 
+@media print {
+ @page { size: A4 portrait; margin: 8mm; }
+ body { 
+ background: white; 
+ padding: 0; 
+ font-size: 10pt;
+ -webkit-print-color-adjust: exact !important;
+ print-color-adjust: exact !important;
+ color-adjust: exact !important;
+ }
+ .no-print { display: none !important; }
+ .report-container { 
+ padding: 5px; 
+ max-width: 100%; 
+ box-shadow: none;
+ }
+ .report-header { 
+ margin-top: 0;
+ margin-bottom: 12px; 
+ padding-top: 0;
+ }
+ .report-header h1 { 
+ font-size: 22pt; 
+ margin-bottom: 8px; 
+ margin-top: 0;
+ letter-spacing: 2px; 
+ color: #333;
+ font-weight: bold;
+ line-height: 1.4;
+ }
+ .patient-info { 
+ padding: 10px 20px; 
+ font-size: 11pt; 
+ margin-bottom: 12px;
+ background: #f8f9fa;
+ border-radius: 5px;
+ display: flex !important;
+ flex-direction: row !important;
+ flex-wrap: nowrap !important;
+ justify-content: space-between !important;
+ gap: 30px !important;
+ }
+ .patient-info .info-item {
+ white-space: nowrap;
+ flex: 1;
+ text-align: center;
+ }
+ .data-table { 
+ font-size: 10pt; 
+ margin: 12px 0; 
+ width: 100%;
+ border-collapse: collapse;
+ }
+  .data-table th { 
+  background: #E8F4F8 !important;
+  color: #333 !important;
+  padding: 6px 6px; 
+  font-size: 11pt;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  line-height: 1.3;
+  border: 1px solid #B8D4E3;
+  text-align: center;
+  }
+ .data-table th .en { 
+ font-size: 9pt; 
+ display: block;
+ margin-top: 2px;
+ }
+  .data-table td { 
+  padding: 4px 6px; 
+  line-height: 1.4;
+  font-size: 11pt;
+  text-align: center;
+  border: 1px solid #ddd;
+  }
+ .data-table tr:nth-child(even) {
+ background: #f8f9fa !important;
+ }
+ .analysis-table { 
+ font-size: 9.5pt; 
+ margin: 12px 0; 
+ width: 100%;
+ border-collapse: collapse;
+ }
+ .analysis-table th { 
+ background: #E8F4F8 !important;
+ color: #333 !important;
+ padding: 8px; 
+ font-size: 11pt;
+ -webkit-print-color-adjust: exact !important;
+ print-color-adjust: exact !important;
+ line-height: 1.3;
+ border: 1px solid #B8D4E3;
+ text-align: center;
+ }
+  .analysis-table td { 
+  padding: 6px 10px; 
+  line-height: 1.4;
+  text-align: left;
+  vertical-align: top;
+  font-size: 11pt;
+  border: 1px solid #ddd;
+  }
+ .analysis-table .section-title {
+ background: #E8F4F8 !important;
+ font-size: 11pt;
+ padding: 10px 8px;
+ color: #333 !important;
+ -webkit-print-color-adjust: exact !important;
+ print-color-adjust: exact !important;
+ line-height: 1.3;
+ border: 1px solid #B8D4E3;
+ text-align: center;
+ font-weight: bold;
+ white-space: nowrap;
+ }
+  .analysis-table .subsection {
+  background: #f8f9fa !important;
+  padding-left: 15px;
+  padding: 6px 10px;
+  text-align: left;
+  font-size: 11pt;
+  }
+  .highlight-red
+ .highlight-green { color: #1B5E20 !important; font-weight: bold; }
+ .highlight-yellow { color: #E65100 !important; font-weight: bold; }
+ .highlight-orange { color: #FF8C00 !important; font-weight: bold; }
+ .card-title { font-size: 11pt; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 2px solid #667eea; }
+ .chart-grid { 
+ display: grid !important;
+ grid-template-columns: 1fr 1fr !important;
+ grid-template-rows: auto !important;
+ gap: 15px; 
+ margin: 15px 0; 
+ page-break-inside: avoid;
+ width: 100%;
+ }
+ .chart-box { 
+ height: 260px; 
+ padding: 15px;
+ border-radius: 8px;
+ box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+ page-break-inside: avoid;
+ overflow: visible;
+ position: relative;
+ background: white;
+ }
+ .chart-box canvas {
+ max-height: 190px;
+ }
+ .chart-box h3 { font-size: 11pt; margin-bottom: 5px; }
+ .legend-box { 
+ display: flex !important;
+ justify-content: center !important;
+ gap: 12px; 
+ margin: 10px 0; 
+ flex-wrap: wrap;
+ }
+ .legend-item { 
+ display: flex !important;
+ align-items: center !important;
+ gap: 5px;
+ font-size: 10pt; 
+ color: #000; 
+ }
+ .legend-color { 
+ width: 20px; 
+ height: 8px; 
+ border-radius: 2px;
+ }
+ .myopia-scale-container { 
+ margin: 30px 0; 
+ position: relative;
+ page-break-inside: avoid;
+ }
+ .myopia-scale-container h3 { 
+ font-size: 11pt; 
+ margin-bottom: 15px; 
+ margin-top: 0;
+ padding-top: 0;
+ }
+ .myopia-scale { 
+ display: flex;
+ border-radius: 6px;
+ overflow: hidden;
+ box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+ height: 55px;
+ }
+ .eye-marker { 
+ position: absolute;
+ top: -20px; 
+ z-index: 10;
+ width: 28px;
+ height: 35px;
+ }
+ .eye-marker-shape {
+ width: 22px;
+ height: 22px;
+ border-width: 2px;
+ }
+ .eye-label { 
+ position: absolute;
+ top: 2px;
+ left: 50%;
+ transform: translateX(-50%);
+ font-size: 10pt; 
+ font-weight: bold;
+ color: #333;
+ z-index: 2;
+ background: transparent;
+ padding: 0;
+ }
+ .scale-item { 
+ flex: 1;
+ text-align: center;
+ padding: 8px 4px; 
+ min-height: 45px;
+ font-size: 9pt;
+ -webkit-print-color-adjust: exact !important;
+ print-color-adjust: exact !important;
+ color: white;
+ font-weight: bold;
+ }
+ .scale-1 { background: #2E7D32 !important; color: white !important; }
+  .scale-2 { background: #F5C518 !important; color: white !important; }
+  .scale-3 { background: #FBC02D !important; color: white !important; }
+ .scale-4 { background: #FF8F00 !important; color: white !important; }
+ .scale-5 { background: #E65100 !important; color: white !important; }
+ .scale-6 { background: #C62828 !important; color: white !important; }
+ .scale-7 { background: #8E0000 !important; color: white !important; }
+ .scale-8 { background: #3E0000 !important; color: white !important; }
+  .scale-item .label1 { font-size: 11pt; margin-bottom: 2px; }
+  .scale-item .label2 { font-size: 11pt; }
+ .arrow-down { display: none; }
+ .arrow-line { display: none; }
+  .notes { 
+  margin-top: 2px; 
+  padding: 3px 6px; 
+  font-size: 8.5pt;
+  line-height: 1.3;
+  background: #f8f9fa;
+  border-radius: 5px;
+  }
+  .notes h4 { font-size: 9pt; margin-bottom: 2px; }
+  .notes p { margin: 1px 0; }
+ h2 { font-size: 13pt !important; margin: 15px 0 10px 0 !important; }
+ h3 { font-size: 11pt !important; margin: 10px 0 6px 0 !important; }
+ table { page-break-inside: avoid; }
+ tr { page-break-inside: avoid; }
+ 
+ .annual-control-page {
+ margin-top: 5px;
+ padding: 5px 0;
+ page-break-inside: avoid;
+ }
+ .annual-control-page .chart-grid {
+ display: grid !important;
+ grid-template-columns: 1fr 1fr !important;
+ gap: 15px;
+ }
+ .annual-control-page .chart-box {
+ height: 300px !important;
+ padding: 10px;
+ margin-top: 3px;
+ overflow: visible;
+ display: flex !important;
+ flex-direction: column !important;
+ }
+ .annual-control-page .chart-box canvas {
+ max-height: 235px;
+ }
+ .annual-control-page h2 {
+ font-size: 13pt !important;
+ margin: 5px 0 !important;
+ }
+ .annual-control-page h3 {
+ font-size: 11pt !important;
+ margin-bottom: 3px !important;
+ }
+ #annualLegend_od, #annualLegend_os {
+ font-size: 9pt !important;
+ margin-top: 8px !important;
+ text-align: center;
+ }
+ }
+ 
+ @media (max-width: 768px) {
+ .chart-grid { grid-template-columns: 1fr; }
+ .patient-info { flex-direction: column; gap: 10px; }
+ }
+ 
+ .annual-control-page {
+ margin-top: 30px;
+ padding: 20px 0;
+ }
+ .annual-control-page .chart-box {
+ height: 320px;
+ }
+ 
+ /* 密钥验证弹窗样式 */
+ .auth-overlay {
+ position: fixed;
+ top: 0;
+ left: 0;
+ width: 100%;
+ height: 100%;
+ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+ display: flex;
+ justify-content: center;
+ align-items: center;
+ z-index: 9999;
+ }
+ .auth-overlay.hidden {
+ display: none;
+ }
+ .auth-box {
+ background: white;
+ padding: 40px;
+ border-radius: 20px;
+ box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+ text-align: center;
+ max-width: 400px;
+ width: 90%;
+ }
+ .auth-box h2 {
+ color: #333;
+ margin-bottom: 20px;
+ font-size: 24px;
+ }
+ .auth-box p {
+ color: #666;
+ margin-bottom: 20px;
+ }
+ .auth-box input {
+ width: 100%;
+ padding: 15px;
+ border: 2px solid #e0e0e0;
+ border-radius: 10px;
+ font-size: 16px;
+ margin-bottom: 15px;
+ text-align: center;
+ }
+ .auth-box input:focus {
+ border-color: #667eea;
+ outline: none;
+ }
+ .auth-box .error {
+ color: #e74c3c;
+ font-size: 14px;
+ margin-top: 10px;
+ display: none;
+ }
+ .auth-box .error.show {
+ display: block;
+ }
+
+ /* 干预手段选择弹窗样式 */
+ .intervention-modal {
+ display: none;
+ position: fixed;
+ top: 0;
+ left: 0;
+ width: 100%;
+ height: 100%;
+ background: rgba(0,0,0,0.5);
+ z-index: 10000;
+ justify-content: center;
+ align-items: center;
+ }
+ .intervention-modal.show {
+ display: flex;
+ }
+ .intervention-modal-content {
+ background: white;
+ border-radius: 15px;
+ padding: 25px;
+ width: 95%;
+ max-width: 900px;
+ max-height: 85vh;
+ overflow-y: auto;
+ box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+ }
+ .intervention-modal-header {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ margin-bottom: 20px;
+ padding-bottom: 15px;
+ border-bottom: 2px solid #667eea;
+ }
+ .intervention-modal-header h3 {
+ color: #333;
+ font-size: 20px;
+ }
+ .intervention-modal-close {
+ background: none;
+ border: none;
+ font-size: 28px;
+ cursor: pointer;
+ color: #999;
+ }
+ .intervention-modal-close:hover {
+ color: #333;
+ }
+ .sync-checkbox {
+ background: #f0f8ff;
+ padding: 12px 15px;
+ border-radius: 8px;
+ margin-bottom: 20px;
+ display: flex;
+ align-items: center;
+ gap: 10px;
+ }
+ .sync-checkbox input[type="checkbox"] {
+ width: 18px;
+ height: 18px;
+ cursor: pointer;
+ }
+ .sync-checkbox label {
+ cursor: pointer;
+ font-size: 14px;
+ color: #667eea;
+ }
+ .current-selection {
+ background: #f0f2ff;
+ padding: 12px 15px;
+ border-radius: 8px;
+ margin-bottom: 20px;
+ font-size: 14px;
+ color: #667eea;
+ }
+ .intervention-category {
+ margin-bottom: 12px;
+ border-bottom: 1px solid #f0f0f0;
+ padding-bottom: 12px;
+ display: flex;
+ align-items: center;
+ gap: 15px;
+ flex-wrap: nowrap;
+ }
+ .intervention-category:last-child {
+ border-bottom: none;
+ }
+ .intervention-category-title {
+ font-weight: 600;
+ color: #333;
+ font-size: 13px;
+ min-width: 80px;
+ flex-shrink: 0;
+ white-space: nowrap;
+ }
+ .intervention-options {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 12px;
+ align-items: center;
+ flex: 1;
+ }
+ .intervention-option {
+ display: flex;
+ align-items: center;
+ gap: 4px;
+ font-size: 13px;
+ white-space: nowrap;
+ }
+ .intervention-option input[type="checkbox"] {
+ width: 16px;
+ height: 16px;
+ cursor: pointer;
+ }
+ .intervention-other {
+ display: flex;
+ align-items: center;
+ gap: 4px;
+ font-size: 13px;
+ white-space: nowrap;
+ }
+ .intervention-other input[type="checkbox"] {
+ width: 16px;
+ height: 16px;
+ cursor: pointer;
+ }
+ .intervention-other input[type="text"] {
+ width: 100px;
+ padding: 4px 6px;
+ border: 1px solid #ddd;
+ border-radius: 4px;
+ font-size: 13px;
+ display: none;
+ }
+ .intervention-other input[type="text"].show {
+ display: inline-block;
+ }
+ .intervention-modal-footer {
+ display: flex;
+ justify-content: center;
+ gap: 15px;
+ margin-top: 25px;
+ padding-top: 20px;
+ border-top: 1px solid #e0e0e0;
+ }
+ .input-group input[readonly] {
+ background: #f8f9fa;
+ cursor: pointer;
+ }
+ @media print {
+ .intervention-modal { display: none !important; }
+ }
+ </style>
+</head>
+<body>
+ <!-- 密钥验证层 -->
+ <div id="authOverlay" class="auth-overlay">
+ <div class="auth-box">
+ <h2>🔐 授权验证</h2>
+ <p>请输入访问密钥</p>
+ <input type="text" id="authKey" placeholder="请输入密钥" maxlength="50">
+ <button class="btn btn-primary" onclick="verifyKey()" style="width: 100%;">立即访问</button>
+ <p class="error" id="authError">密钥错误，请重试</p>
+ </div>
+ </div>
+
+ <!-- 干预手段选择弹窗 -->
+ <div id="interventionModal" class="intervention-modal">
+ <div class="intervention-modal-content">
+ <div class="intervention-modal-header">
+ <h3 id="modalTitle">干预手段选择</h3>
+ <button class="intervention-modal-close" onclick="closeInterventionModal()">×</button>
+ </div>
+ 
+ <div class="sync-checkbox" id="syncSection">
+ <input type="checkbox" id="syncEyes" checked onchange="toggleSync()">
+ <label for="syncEyes">左眼与右眼干预方式保持一致（取消勾选可单独设置左眼）</label>
+ </div>
+ 
+ <div class="current-selection">
+ <strong>当前选择：</strong><span id="currentSelection">未干预</span>
+ </div>
+ 
+ <div id="interventionCategories">
+ <!-- 未干预 -->
+ <div class="intervention-category">
+ <div class="intervention-options">
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="未干预" data-category="weigan" id="weiganyu_checkbox" onchange="handleWeiganYuChange()"> 未干预</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="单光" data-category="weigan"> 单光</label>
+ </div>
+ </div>
+ 
+ <!-- 离焦镜 -->
+ <div class="intervention-category">
+ <div class="intervention-category-title">离焦镜：</div>
+ <div class="intervention-options">
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="新乐学" data-category="lijiao"> 新乐学</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="星趣控" data-category="lijiao"> 星趣控</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="控优点" data-category="lijiao"> 控优点</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="小乐圆" data-category="lijiao"> 小乐圆</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="压轴大师" data-category="lijiao"> 压轴大师</label>
+ <label class="intervention-other"><input type="checkbox" name="intervention_other" value="other_lijiao" data-category="lijiao" onchange="toggleOtherInput('other_lijiao')"> 其他<input type="text" id="other_lijiao" oninput="updateCurrentSelection()" placeholder="请输入"></label>
+ </div>
+ </div>
+ 
+ <!-- 平光离焦 -->
+ <div class="intervention-category">
+ <div class="intervention-category-title">平光离焦：</div>
+ <div class="intervention-options">
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="平光离焦" data-category="pingguang"> 平光离焦</label>
+ </div>
+ </div>
+ 
+ <!-- OK镜 -->
+ <div class="intervention-category">
+ <div class="intervention-category-title">OK镜：</div>
+ <div class="intervention-options">
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="欧几里得" data-category="okjing"> 欧几里得</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="阿尔法" data-category="okjing"> 阿尔法</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="CRT" data-category="okjing"> CRT</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="艾康菲" data-category="okjing"> 艾康菲</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="梦戴维" data-category="okjing"> 梦戴维</label>
+ <label class="intervention-other"><input type="checkbox" name="intervention_other" value="other_okjing" data-category="okjing" onchange="toggleOtherInput('other_okjing')"> 其他<input type="text" id="other_okjing" oninput="updateCurrentSelection()" placeholder="请输入"></label>
+ </div>
+ </div>
+ 
+ <!-- 离焦软镜 -->
+ <div class="intervention-category">
+ <div class="intervention-category-title">离焦软镜：</div>
+ <div class="intervention-options">
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="蝶适" data-category="lijiaoruan"> 蝶适</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="MiSight" data-category="lijiaoruan"> MiSight</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="安视美" data-category="lijiaoruan"> 安视美</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="视界" data-category="lijiaoruan"> 视界</label>
+ <label class="intervention-other"><input type="checkbox" name="intervention_other" value="other_lijiaoruan" data-category="lijiaoruan" onchange="toggleOtherInput('other_lijiaoruan')"> 其他<input type="text" id="other_lijiaoruan" oninput="updateCurrentSelection()" placeholder="请输入"></label>
+ </div>
+ </div>
+ 
+ <!-- 视觉训练 -->
+ <div class="intervention-category">
+ <div class="intervention-category-title">视觉训练：</div>
+ <div class="intervention-options">
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="调节训练" data-category="shijue"> 调节训练</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="融像训练" data-category="shijue"> 融像训练</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="VR训练" data-category="shijue"> VR训练</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="翻转拍" data-category="shijue"> 翻转拍</label>
+ <label class="intervention-other"><input type="checkbox" name="intervention_other" value="other_shijue" data-category="shijue" onchange="toggleOtherInput('other_shijue')"> 其他<input type="text" id="other_shijue" oninput="updateCurrentSelection()" placeholder="请输入"></label>
+ </div>
+ </div>
+ 
+ <!-- 红光 -->
+ <div class="intervention-category">
+ <div class="intervention-category-title">红光：</div>
+ <div class="intervention-options">
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="贝贝乐" data-category="hongguang"> 贝贝乐</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="艾尔兴" data-category="hongguang"> 艾尔兴</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="鹰瞳" data-category="hongguang"> 鹰瞳</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="未来视界" data-category="hongguang"> 未来视界</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="益视亮" data-category="hongguang"> 益视亮</label>
+ <label class="intervention-other"><input type="checkbox" name="intervention_other" value="other_hongguang" data-category="hongguang" onchange="toggleOtherInput('other_hongguang')"> 其他<input type="text" id="other_hongguang" oninput="updateCurrentSelection()" placeholder="请输入"></label>
+ </div>
+ </div>
+ 
+ <!-- 读写台 -->
+ <div class="intervention-category">
+ <div class="intervention-category-title">读写台：</div>
+ <div class="intervention-options">
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="视多星" data-category="duxie"> 视多星</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="京东方" data-category="duxie"> 京东方</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="安目佳" data-category="duxie"> 安目佳</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="未来视界" data-category="duxie"> 未来视界</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="艾沐锐达" data-category="duxie"> 艾沐锐达</label>
+ <label class="intervention-other"><input type="checkbox" name="intervention_other" value="other_duxie" data-category="duxie" onchange="toggleOtherInput('other_duxie')"> 其他<input type="text" id="other_duxie" oninput="updateCurrentSelection()" placeholder="请输入"></label>
+ </div>
+ </div>
+ 
+ <!-- 雾视屏 -->
+ <div class="intervention-category">
+ <div class="intervention-category-title">雾视屏：</div>
+ <div class="intervention-options">
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="D1" data-category="wushi"> D1</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="睿视max" data-category="wushi"> 睿视max</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="大瞳星" data-category="wushi"> 大瞳星</label>
+ <label class="intervention-other"><input type="checkbox" name="intervention_other" value="other_wushi" data-category="wushi" onchange="toggleOtherInput('other_wushi')"> 其他<input type="text" id="other_wushi" oninput="updateCurrentSelection()" placeholder="请输入"></label>
+ </div>
+ </div>
+ 
+ <!-- 阿托品浓度 -->
+ <div class="intervention-category">
+ <div class="intervention-category-title">阿托品浓度：</div>
+ <div class="intervention-options">
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="0.01%阿托品" data-category="atuopin"> 0.01%阿托品</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="0.05%阿托品" data-category="atuopin"> 0.05%阿托品</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="1%阿托品" data-category="atuopin"> 1%阿托品</label>
+ <label class="intervention-other"><input type="checkbox" name="intervention_other" value="other_atuopin" data-category="atuopin" onchange="toggleOtherInput('other_atuopin')"> 其他<input type="text" id="other_atuopin" oninput="updateCurrentSelection()" placeholder="请输入"></label>
+ </div>
+ </div>
+ 
+ <!-- 阳光大户外 -->
+ <div class="intervention-category">
+ <div class="intervention-category-title">阳光大户外：</div>
+ <div class="intervention-options">
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="户外2h/天" data-category="huwai"> 户外2h/天</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="户外4h/天" data-category="huwai"> 户外4h/天</label>
+ <label class="intervention-other"><input type="checkbox" name="intervention_other" value="other_huwai" data-category="huwai" onchange="toggleOtherInput('other_huwai')"> 其他<input type="text" id="other_huwai" oninput="updateCurrentSelection()" placeholder="请输入"></label>
+ </div>
+ </div>
+ 
+ <!-- 台灯 -->
+ <div class="intervention-category">
+ <div class="intervention-category-title">台灯：</div>
+ <div class="intervention-options">
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="全光谱台灯" data-category="taideng"> 全光谱台灯</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="大陆灯" data-category="taideng"> 大陆灯</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="稀土灯" data-category="taideng"> 稀土灯</label>
+ <label class="intervention-other"><input type="checkbox" name="intervention_other" value="other_taideng" data-category="taideng" onchange="toggleOtherInput('other_taideng')"> 其他<input type="text" id="other_taideng" oninput="updateCurrentSelection()" placeholder="请输入"></label>
+ </div>
+ </div>
+ 
+ <!-- 营养 -->
+ <div class="intervention-category">
+ <div class="intervention-category-title">营养：</div>
+ <div class="intervention-options">
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="花青素" data-category="yingyang"> 花青素</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="虾青素" data-category="yingyang"> 虾青素</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="OMEGA—3" data-category="yingyang"> OMEGA—3</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="叶黄素" data-category="yingyang"> 叶黄素</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="维生素D3" data-category="yingyang"> 维生素D3</label>
+ <label class="intervention-other"><input type="checkbox" name="intervention_other" value="other_yingyang" data-category="yingyang" onchange="toggleOtherInput('other_yingyang')"> 其他<input type="text" id="other_yingyang" oninput="updateCurrentSelection()" placeholder="请输入"></label>
+ </div>
+ </div>
+ 
+ <!-- 中医 -->
+ <div class="intervention-category">
+ <div class="intervention-category-title">中医：</div>
+ <div class="intervention-options">
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="耳穴压丸" data-category="zhongyi"> 耳穴压丸</label>
+ <label class="intervention-option"><input type="checkbox" name="intervention" value="眼部按摩" data-category="zhongyi"> 眼部按摩</label>
+ <label class="intervention-other"><input type="checkbox" name="intervention_other" value="other_zhongyi" data-category="zhongyi" onchange="toggleOtherInput('other_zhongyi')"> 其他<input type="text" id="other_zhongyi" oninput="updateCurrentSelection()" placeholder="请输入"></label>
+ </div>
+ </div>
+ </div>
+ 
+ <div class="intervention-modal-footer">
+ <button class="btn btn-primary" onclick="confirmIntervention()">确定</button>
+ <button class="btn btn-secondary" onclick="closeInterventionModal()">取消</button>
+ </div>
+ </div>
+ </div>
+
+ <div class="container" id="mainContent" style="display: none;">
+ <div class="no-print">
+ <div class="header">
+ <h1>眼屈光发育状态预测系统</h1>
+ <p>专业版 - 基于眼轴与角膜曲率的近视预测分析</p>
+ </div>
+ 
+ <div class="nav-tabs">
+ <button class="nav-tab active" onclick="showSection('input')">📋 数据录入</button>
+ <button class="nav-tab" onclick="showSection('report-preview')">📄 报告预览</button>
+ </div>
+
+ <div id="input" class="section active">
+ <div class="card">
+ <h2 class="card-title">👤 患者基本信息</h2>
+ <div class="form-grid">
+   <div class="input-group">
+   <label>姓名</label>
+    <div class="input-with-voice"><input type="text" id="patientName" value=""><button class="voice-btn" onclick="startVoiceInput('patientName', this)" title="语音输入">🎤</button></div>
+   <div class="voice-hint">直接说出患者姓名</div>
+   </div>
+ <div class="input-group">
+ <label>性别</label>
+ <select id="patientGender">
+ <option value="男" selected>男</option>
+ <option value="女">女</option>
+ </select>
+ </div>
+   <div class="input-group">
+   <label>出生日期</label>
+      <div class="input-with-voice"><input type="text" id="birthDate" class="date-mask-input" value="" placeholder="YYYY/MM/DD" maxlength="10" onkeydown="handleDateMaskKeyDown(event, this)" oninput="formatDateInputV2(this); setTimeout(calculateAge, 0)"><button class="voice-btn" onclick="startVoiceInput('birthDate', this)" title="语音输入">🎤</button></div>
+     <div class="voice-hint">可以说"2010-03-18"或"二零一零年三月十八"</div>
+   </div>
+ <div class="input-group">
+ <label>年龄（自动计算）</label>
+ <input type="number" id="patientAge" value="7" readonly>
+ </div>
+     <div class="input-group">
+     <label>报告日期</label>
+       <div class="input-with-voice"><input type="text" id="reportDate" class="date-mask-input" value="" placeholder="YYYY/MM/DD" maxlength="10" onkeydown="handleDateMaskKeyDown(event, this)" oninput="formatDateInputV2(this)"><button class="voice-btn" onclick="startVoiceInput('reportDate', this)" title="语音输入">🎤</button></div>
+      <div class="voice-hint">输入年/月/日（如：2026/03/22）</div>
+     </div>
+    <div class="input-group">
+    <label>检查机构</label>
+     <div class="input-with-voice"><input type="text" id="institution" value="" placeholder="未填写"><button class="voice-btn" onclick="startVoiceInput('institution', this)" title="语音输入">🎤</button></div>
+    </div>
+ </div>
+ </div>
+
+ <div class="card">
+ <h2 class="card-title">👁️ 右眼（OD/Right）检查数据</h2>
+ <div class="form-grid">
+  <div class="input-group">
+  <label>眼轴 AL (mm) *</label>
+   <div class="input-with-voice"><input type="number" id="odAl" step="0.01" value="" placeholder="未填写"><button class="voice-btn" onclick="startVoiceInput('odAl', this)" title="语音输入">🎤</button></div>
+  <div class="voice-hint">说"二十四点二七"或"24.27"</div>
+  </div>
+  <div class="input-group">
+  <label>角膜曲率 K (D) *</label>
+   <div class="input-with-voice"><input type="number" id="odK" step="0.01" value="" placeholder="未填写"><button class="voice-btn" onclick="startVoiceInput('odK', this)" title="语音输入">🎤</button></div>
+  </div>
+  <div class="input-group">
+  <label>晶状体 LT (mm) 选填</label>
+   <div class="input-with-voice"><input type="number" id="odLt" step="0.01" value="" min="2.5" max="5.0" placeholder="未填写"><button class="voice-btn" onclick="startVoiceInput('odLt', this)" title="语音输入">🎤</button></div>
+  </div>
+   <div class="input-group">
+   <label>眼轴月增速AL (mm)</label>
+    <div class="input-with-voice"><input type="number" id="odAv" step="0.0001" value="" placeholder="未填写"><button class="voice-btn" onclick="startVoiceInput('odAv', this)" title="语音输入">🎤</button></div>
+   </div>
+   <div class="input-group" style="grid-column: span 2;">
+   <label>目前干预手段（点击选择）</label>
+   <input type="text" id="odIntervention" value="" placeholder="未干预" readonly onclick="openInterventionModal('od')" style="cursor: pointer;">
+   </div>
+  </div>
+  </div>
+
+  <div class="card">
+  <h2 class="card-title">👁️ 左眼（OS/Left）检查数据</h2>
+ <div class="form-grid">
+  <div class="input-group">
+  <label>眼轴 AL (mm) *</label>
+   <div class="input-with-voice"><input type="number" id="osAl" step="0.01" value="" placeholder="未填写"><button class="voice-btn" onclick="startVoiceInput('osAl', this)" title="语音输入">🎤</button></div>
+  <div class="voice-hint">说"二十四点二七"或"24.27"</div>
+  </div>
+  <div class="input-group">
+  <label>角膜曲率 K (D) *</label>
+   <div class="input-with-voice"><input type="number" id="osK" step="0.01" value="" placeholder="未填写"><button class="voice-btn" onclick="startVoiceInput('osK', this)" title="语音输入">🎤</button></div>
+  </div>
+  <div class="input-group">
+  <label>晶状体 LT (mm) 选填</label>
+   <div class="input-with-voice"><input type="number" id="osLt" step="0.01" value="" min="2.5" max="5.0" placeholder="未填写"><button class="voice-btn" onclick="startVoiceInput('osLt', this)" title="语音输入">🎤</button></div>
+  </div>
+   <div class="input-group">
+   <label>眼轴月增速AL (mm)</label>
+    <div class="input-with-voice"><input type="number" id="osAv" step="0.0001" value="" placeholder="未填写"><button class="voice-btn" onclick="startVoiceInput('osAv', this)" title="语音输入">🎤</button></div>
+   </div>
+   <div class="input-group" style="grid-column: span 2;">
+   <label>目前干预手段（点击选择）</label>
+   <input type="text" id="osIntervention" value="" placeholder="未干预" readonly onclick="openInterventionModal('os')" style="cursor: pointer;">
+   </div>
+  </div>
+  </div>
+  
+  <div style="text-align: center;">
+ <button class="btn btn-primary" onclick="generateAnalysis()">生成分析报告</button>
+ </div>
+ </div>
+ </div>
+
+ <div id="report-preview" class="section">
+ <div id="professionalReport"></div>
+ 
+ <div style="text-align: center; margin-top: 30px;" class="no-print">
+ <button class="btn btn-primary" onclick="printReport()">🖨️ 打印报告</button>
+ <button class="btn btn-secondary" onclick="showSection('input')">← 返回修改</button>
+ </div>
+ </div>
+ </div>
+
+ <script>
+ // ==================== 密钥验证功能 ====================
+ // 在这里设置你的密钥（可以设置多个，用逗号分隔）
+ const VALID_KEYS = ['eye2024', 'vision123', 'doc2024'];
+ 
+   function checkAuth() {
+   // 密钥验证已取消，直接进入主界面
+   showMainContent();
+   }
+ 
+ function verifyKey() {
+ const inputKey = document.getElementById('authKey').value.trim();
+ const errorEl = document.getElementById('authError');
+ 
+ if (VALID_KEYS.includes(inputKey)) {
+ sessionStorage.setItem('eye_auth_verified', 'true');
+ errorEl.classList.remove('show');
+ showMainContent();
+ } else {
+ errorEl.classList.add('show');
+ }
+ }
+ 
+ document.getElementById('authKey').addEventListener('keypress', function(e) {
+ if (e.key === 'Enter') {
+ verifyKey();
+ }
+ });
+ 
+ function showMainContent() {
+ document.getElementById('authOverlay').classList.add('hidden');
+ document.getElementById('mainContent').style.display = 'block';
+ }
+ 
+ // ==================== 干预手段选择功能 ====================
+ let currentEye = null;
+ let odInterventionData = [];
+ let osInterventionData = [];
+ let isSyncEnabled = true;
+ 
+ const otherInputIds = [
+ 'other_lijiao', 'other_okjing', 'other_lijiaoruan', 'other_shijue',
+ 'other_hongguang', 'other_duxie', 'other_wushi', 'other_atuopin',
+ 'other_huwai', 'other_taideng', 'other_yingyang', 'other_zhongyi'
+ ];
+ 
+ function openInterventionModal(eye) {
+ currentEye = eye;
+ const modal = document.getElementById('interventionModal');
+ const modalTitle = document.getElementById('modalTitle');
+ const syncSection = document.getElementById('syncSection');
+ 
+ modalTitle.textContent = (eye === 'od' ? '右眼' : '左眼') + '干预手段选择';
+ 
+ // 如果是右眼，显示同步选项；如果是左眼且同步开启，隐藏同步选项
+ if (eye === 'od') {
+ syncSection.style.display = 'flex';
+ document.getElementById('syncEyes').checked = isSyncEnabled;
+ } else {
+ if (isSyncEnabled) {
+ syncSection.style.display = 'none';
+ } else {
+ syncSection.style.display = 'flex';
+ document.getElementById('syncEyes').checked = false;
+ }
+ }
+ 
+ // 加载当前选择
+ loadInterventionSelections(eye);
+ 
+ // 如果没有选择任何选项，默认勾选未干预
+ const hasSelection = document.querySelectorAll('input[name="intervention"]:checked, input[name="intervention_other"]:checked').length > 0;
+ if (!hasSelection) {
+ const weiganYuCheckbox = document.getElementById('weiganyu_checkbox');
+ if (weiganYuCheckbox) weiganYuCheckbox.checked = true;
+ }
+ 
+ updateCurrentSelection();
+ 
+ modal.classList.add('show');
+ }
+ 
+ function closeInterventionModal() {
+ document.getElementById('interventionModal').classList.remove('show');
+ currentEye = null;
+ }
+ 
+ function toggleSync() {
+ isSyncEnabled = document.getElementById('syncEyes').checked;
+ }
+ 
+ function handleWeiganYuChange() {
+ const weiganYuCheckbox = document.getElementById('weiganyu_checkbox');
+ if (weiganYuCheckbox && weiganYuCheckbox.checked) {
+ // 取消所有其他选项的勾选
+ document.querySelectorAll('input[name="intervention"]').forEach(cb => {
+ if (cb.value !== '未干预') {
+ cb.checked = false;
+ }
+ });
+ document.querySelectorAll('input[name="intervention_other"]').forEach(cb => {
+ cb.checked = false;
+ });
+ // 隐藏所有其他输入框
+ otherInputIds.forEach(id => {
+ const input = document.getElementById(id);
+ if (input) {
+ input.classList.remove('show');
+ input.value = '';
+ }
+ });
+ }
+ updateCurrentSelection();
+ }
+ 
+ function handleOtherInterventionChange() {
+ const weiganYuCheckbox = document.getElementById('weiganyu_checkbox');
+ if (weiganYuCheckbox) {
+ weiganYuCheckbox.checked = false;
+ }
+ updateCurrentSelection();
+ }
+ 
+ function toggleOtherInput(inputId) {
+ const checkbox = document.querySelector(`input[name="intervention_other"][value="${inputId}"]`);
+ const textInput = document.getElementById(inputId);
+ if (checkbox && textInput) {
+ if (checkbox.checked) {
+ textInput.classList.add('show');
+ textInput.focus();
+ } else {
+ textInput.classList.remove('show');
+ textInput.value = '';
+ }
+ }
+ updateCurrentSelection();
+ }
+ 
+ function loadInterventionSelections(eye) {
+ const data = eye === 'od' ? odInterventionData : osInterventionData;
+ 
+ // 重置所有复选框
+ document.querySelectorAll('input[name="intervention"]').forEach(cb => {
+ cb.checked = false;
+ });
+ 
+ // 重置所有其他复选框和输入框
+ document.querySelectorAll('input[name="intervention_other"]').forEach(cb => {
+ cb.checked = false;
+ });
+ otherInputIds.forEach(id => {
+ const input = document.getElementById(id);
+ if (input) {
+ input.value = '';
+ input.classList.remove('show');
+ }
+ });
+ 
+ // 加载保存的选择
+ data.forEach(item => {
+ if (item.type === 'checkbox') {
+ const cb = document.querySelector(`input[name="intervention"][value="${item.value}"]`);
+ if (cb) cb.checked = true;
+ } else if (item.type === 'other') {
+ // 勾选其他checkbox并显示文本框
+ const otherCb = document.querySelector(`input[name="intervention_other"][value="${item.id}"]`);
+ const input = document.getElementById(item.id);
+ if (otherCb) otherCb.checked = true;
+ if (input) {
+ input.value = item.value;
+ input.classList.add('show');
+ }
+ }
+ });
+ }
+ 
+ function getCurrentSelections() {
+ const selections = [];
+ 
+ // 获取所有选中的复选框
+ document.querySelectorAll('input[name="intervention"]:checked').forEach(cb => {
+ selections.push({
+ type: 'checkbox',
+ value: cb.value,
+ category: cb.dataset.category
+ });
+ });
+ 
+ // 获取所有选中的其他复选框及其输入值
+ document.querySelectorAll('input[name="intervention_other"]:checked').forEach(cb => {
+ const inputId = cb.value;
+ const input = document.getElementById(inputId);
+ if (input && input.value.trim()) {
+ selections.push({
+ type: 'other',
+ id: inputId,
+ value: input.value.trim(),
+ category: cb.dataset.category
+ });
+ }
+ });
+ 
+ return selections;
+ }
+ 
+ function updateCurrentSelection() {
+ const selections = getCurrentSelections();
+ const displayText = formatSelectionsForDisplay(selections);
+ document.getElementById('currentSelection').textContent = displayText || '未干预';
+ }
+ 
+ function formatSelectionsForDisplay(selections) {
+ if (selections.length === 0) return '';
+ 
+ // 分离不同类别的选项
+ const lijiaoItems = []; // 离焦镜
+ const pingguangItems = []; // 平光离焦
+ const otherItems = []; // 其他
+ 
+ selections.forEach(item => {
+ const category = item.category;
+ const value = item.type === 'checkbox' ? item.value : item.value;
+ 
+ if (category === 'lijiao') {
+ lijiaoItems.push(value);
+ } else if (category === 'pingguang') {
+ pingguangItems.push(value);
+ } else {
+ otherItems.push(value);
+ }
+ });
+ 
+ // 构建结果
+ const resultParts = [];
+ 
+ // 处理离焦镜和平光离焦的组合
+ if (lijiaoItems.length > 0 && pingguangItems.length > 0) {
+ // 同时有离焦镜和平光离焦，直接拼接不加+
+ lijiaoItems.forEach(lijiao => {
+ pingguangItems.forEach(pingguang => {
+ resultParts.push(lijiao + pingguang);
+ });
+ });
+ } else {
+ // 只有离焦镜或只有平光离焦
+ resultParts.push(...lijiaoItems);
+ resultParts.push(...pingguangItems);
+ }
+ 
+ // 添加其他类别
+ resultParts.push(...otherItems);
+ 
+ return resultParts.join('+');
+ }
+ 
+ function confirmIntervention() {
+ const selections = getCurrentSelections();
+ const displayText = formatSelectionsForDisplay(selections);
+ 
+ if (currentEye === 'od') {
+ odInterventionData = selections;
+ document.getElementById('odIntervention').value = displayText || '未干预';
+ 
+ // 如果同步开启，同步到左眼
+ if (isSyncEnabled) {
+ osInterventionData = JSON.parse(JSON.stringify(selections));
+ document.getElementById('osIntervention').value = displayText || '未干预';
+ }
+ } else {
+ osInterventionData = selections;
+ document.getElementById('osIntervention').value = displayText || '未干预';
+ }
+ 
+ closeInterventionModal();
+ }
+ 
+ // 监听复选框变化
+ document.addEventListener('DOMContentLoaded', function() {
+ document.querySelectorAll('input[name="intervention"]').forEach(cb => {
+ cb.addEventListener('change', function() {
+ if (this.value !== '未干预' && this.checked) {
+ // 勾选了非未干预选项，取消未干预
+ const weiganYuCheckbox = document.getElementById('weiganyu_checkbox');
+ if (weiganYuCheckbox) weiganYuCheckbox.checked = false;
+ }
+ updateCurrentSelection();
+ });
+ });
+ document.querySelectorAll('input[name="intervention_other"]').forEach(cb => {
+ cb.addEventListener('change', function() {
+ if (this.checked) {
+ // 勾选了其他选项，取消未干预
+ const weiganYuCheckbox = document.getElementById('weiganyu_checkbox');
+ if (weiganYuCheckbox) weiganYuCheckbox.checked = false;
+ }
+ toggleOtherInput(this.value);
+ });
+ });
+ });
+ 
+  window.addEventListener('load', checkAuth);
+  
+  // ==================== 语音输入功能 ====================
+   let recognition = null;
+   let currentVoiceInputId = null;
+   let voiceErrorCount = 0;  // 语音错误计数器
+   const MAX_VOICE_ERRORS = 6;  // 最大错误次数才提示
+
+  function initSpeechRecognition() {
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = 'zh-CN';
+  
+  recognition.onresult = function(event) {
+  const transcript = event.results[0][0].transcript;
+  processVoiceInput(transcript);
+  };
+  
+   recognition.onerror = function(event) {
+   console.error('语音识别错误:', event.error);
+   stopVoiceRecording();
+   };
+  
+  recognition.onend = function() {
+  stopVoiceRecording();
+  };
+  
+  return true;
+  } else {
+  alert('您的浏览器不支持语音识别，请使用Chrome或Edge浏览器');
+  return false;
+  }
+  }
+
+    function startVoiceInput(inputId, btnElement) {
+    if (!recognition && !initSpeechRecognition()) {
+    return;
+    }
+    
+    // 如果正在录音，先停止当前录音，然后重新开始
+    if (btnElement && btnElement.classList.contains('recording')) {
+    try {
+    recognition.stop();
+    } catch(e) {
+    // 忽略停止错误
+    }
+    stopVoiceRecording();
+    // 短暂延迟后重新开始
+    setTimeout(() => {
+    startVoiceInput(inputId, btnElement);
+    }, 100);
+    return;
+    }
+    
+    currentVoiceInputId = inputId;
+    
+    document.querySelectorAll('.voice-btn').forEach(btn => {
+    btn.classList.remove('recording');
+    });
+    
+    if (btnElement) {
+    btnElement.classList.add('recording');
+    }
+    
+     try {
+     recognition.start();
+     voiceErrorCount = 0;  // 成功启动则重置计数器
+     } catch(e) {
+     console.error('启动语音识别失败:', e);
+     // 如果是已经在录音，尝试停止后重新开始
+     try {
+     recognition.stop();
+     } catch(stopErr) {
+     // 忽略停止错误
+     }
+     voiceErrorCount++;
+     // 连续3次失败才提示
+     if (voiceErrorCount >= MAX_VOICE_ERRORS) {
+     alert('语音识别连续多次失败，请检查麦克风权限或使用键盘输入');
+     voiceErrorCount = 0;  // 提示后重置
+     }
+     stopVoiceRecording();
+     // 延迟后尝试重新开始
+     setTimeout(() => {
+     if (btnElement) {
+     btnElement.classList.add('recording');
+     }
+     try {
+     recognition.start();
+     voiceErrorCount = 0;
+     } catch(retryErr) {
+     console.error('重试语音识别失败:', retryErr);
+     stopVoiceRecording();
+     }
+     }, 200);
+     }
+    }
+
+  function stopVoiceRecording() {
+  document.querySelectorAll('.voice-btn').forEach(btn => {
+  btn.classList.remove('recording');
+  });
+  }
+
+   function processVoiceInput(text) {
+   if (!currentVoiceInputId) return;
+   
+   console.log('语音识别结果:', text);
+   
+   const input = document.getElementById(currentVoiceInputId);
+   if (!input) return;
+   
+// 文字类型输入：姓名、机构 - 直接填入识别到的文字，去除标点符号
+ if (currentVoiceInputId === 'patientName' || currentVoiceInputId === 'institution') {
+ input.value = text.trim().replace(/[。，.,]/g, '');
+ input.dispatchEvent(new Event('change'));
+ currentVoiceInputId = null;
+ return;
+ }
+   
+    // 日期类型输入：出生日期、报告日期 - 解析日期
+    if (currentVoiceInputId === 'birthDate' || currentVoiceInputId === 'reportDate') {
+    const dateStr = parseDateFromVoice(text);
+    if (dateStr) {
+    input.value = dateStr;
+    input.dispatchEvent(new Event('change'));
+    } else {
+     alert('未能识别日期，请重试。可以说"2010-03-18"或"二零一零年三月十八"');
+    }
+    currentVoiceInputId = null;
+    return;
+    }
+   
+   // 数字类型输入：眼轴、曲率等 - 提取数字
+   let number = extractNumberFromChinese(text);
+   
+   if (number !== null) {
+   input.value = number;
+   input.dispatchEvent(new Event('change'));
+   } else {
+   alert('未能识别数字，请重试。可以说"二十四点二七"或"24.27"');
+   }
+   
+   currentVoiceInputId = null;
+   }
+
+  function extractNumberFromChinese(text) {
+  const directNumber = text.match(/-?\d+\.?\d*/);
+  if (directNumber) {
+  return directNumber[0];
+  }
+  
+  const chineseNumbers = {
+  '零': 0, '一': 1, '二': 2, '三': 3, '四': 4,
+  '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
+  '十': 10, '两': 2
+  };
+  
+  let result = text;
+  result = result.replace(/点/g, '.');
+  result = result.replace(/[负减]/g, '-');
+  
+  for (let cn in chineseNumbers) {
+  if (result.includes(cn)) {
+  result = result.split(cn).join(chineseNumbers[cn]);
+  }
+  }
+  
+  const numberMatch = result.match(/-?\d+\.?\d*/);
+  if (numberMatch) {
+  return numberMatch[0];
+  }
+  
+   return null;
+   }
+
+    // 从语音中解析日期（支持"2010-03-18"或"二零一零年三月十八"等格式）
+   function parseDateFromVoice(text) {
+   const chineseNumbers = {
+   '零': 0, '〇': 0, '一': 1, '二': 2, '三': 3, '四': 4,
+   '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
+   '十': 10, '两': 2
+   };
+   
+   let processed = text.trim();
+   
+   // 替换中文数字为阿拉伯数字
+   for (let cn in chineseNumbers) {
+   if (processed.includes(cn)) {
+   processed = processed.split(cn).join(chineseNumbers[cn]);
+   }
+   }
+   
+   // 处理"十"月/日的情况（如"十月"->10，"二十"->20，"二十三"->23）
+   processed = processed.replace(/(\d*)十(\d*)/g, function(match, p1, p2) {
+   const ten = p1 ? parseInt(p1) * 10 : 10;
+   const unit = p2 ? parseInt(p2) : 0;
+   return ten + unit;
+   });
+   
+    // 格式1: 2010-03-18 / 2010年03月18日
+   const format1 = processed.match(/(\d{4})[年/-](\d{1,2})[月/-](\d{1,2})[日号]?/);
+   if (format1) {
+   const year = format1[1];
+   const month = format1[2].padStart(2, '0');
+   const day = format1[3].padStart(2, '0');
+   return `${year}-${month}-${day}`;
+   }
+   
+   // 格式2: 2010/3/18 或 2010-3-18
+   const format2 = processed.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
+   if (format2) {
+   const year = format2[1];
+   const month = format2[2].padStart(2, '0');
+   const day = format2[3].padStart(2, '0');
+   return `${year}-${month}-${day}`;
+   }
+   
+   // 格式3: 只说了年月日数字（如"2010 3 18"）
+   const format3 = processed.match(/(\d{4})\s+(\d{1,2})\s+(\d{1,2})/);
+   if (format3) {
+   const year = format3[1];
+   const month = format3[2].padStart(2, '0');
+   const day = format3[3].padStart(2, '0');
+   return `${year}-${month}-${day}`;
+   }
+   
+   return null;
+   }
+   
+   // ==================== 原有业务逻辑 ====================
+ 
+     // 设置报告日期为当天日期
+     const today = new Date();
+     const reportDateStr = today.getFullYear() + '/' + 
+                           String(today.getMonth() + 1).padStart(2, '0') + '/' + 
+                           String(today.getDate()).padStart(2, '0');
+     document.getElementById('reportDate').value = reportDateStr;
+  
+   // 日期输入处理 - 自动添加斜杠
+   function formatDateInputV2(input) {
+     // 只允许数字和斜杠
+     let value = input.value.replace(/[^0-9]/g, '');
+     
+     // 自动添加斜杠
+     if (value.length > 4) {
+       value = value.slice(0, 4) + '/' + value.slice(4);
+     }
+     if (value.length > 7) {
+       value = value.slice(0, 7) + '/' + value.slice(7);
+     }
+     
+     // 限制总长度
+     if (value.length > 10) {
+       value = value.slice(0, 10);
+     }
+     
+     input.value = value;
+   }
+   
+   // 处理键盘事件
+   function handleDateMaskKeyDown(event, input) {
+     // 允许常规编辑键
+     if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 
+          'Tab', 'Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(event.key)) {
+       return;
+     }
+     
+     // 允许复制粘贴
+     if ((event.ctrlKey || event.metaKey) && ['c', 'v', 'x', 'a'].includes(event.key.toLowerCase())) {
+       return;
+     }
+     
+     const cursorPos = input.selectionStart;
+     const value = input.value;
+     
+     // 数字键直接输入（让 oninput 处理格式化）
+     if (/^[0-9]$/.test(event.key)) {
+       return;
+     }
+     
+     // 斜杠键直接输入
+     if (event.key === '/') {
+       return;
+     }
+     
+     // 退格键
+     if (event.key === 'Backspace') {
+       return;
+     }
+     
+     // 删除键
+     if (event.key === 'Delete') {
+       return;
+     }
+     
+     // 阻止其他按键
+     event.preventDefault();
+   }
+   
+   // 从格式化值提取日期字符串
+    function getDateFromMask(maskValue) {
+      if (!maskValue) return '';
+      // 统一替换为斜杠再分割，支持 YYYY/MM/DD 和 YYYY-MM-DD 格式
+      const normalizedValue = maskValue.replace(/-/g, '/');
+      const parts = normalizedValue.split('/');
+      if (parts.length !== 3) return '';
+      if (parts[0].length !== 4 || parts[1].length !== 2 || parts[2].length !== 2) return '';
+      return parts[0] + '-' + parts[1] + '-' + parts[2];
+    }
+   
+    function calculateAge() {
+      const birthDateValue = document.getElementById('birthDate').value;
+      // 统一替换为斜杠再分割，支持 YYYY/MM/DD 和 YYYY-MM-DD 格式
+      const normalizedValue = birthDateValue.replace(/-/g, '/');
+      const parts = normalizedValue.split('/');
+      if (parts.length !== 3) return;
+      if (parts[0].length !== 4 || parts[1].length !== 2 || parts[2].length !== 2) return;
+      
+      const dateStr = parts[0] + '-' + parts[1] + '-' + parts[2];
+      const birthDate = new Date(dateStr);
+     if (isNaN(birthDate.getTime())) return;
+     
+     const today = new Date();
+     let age = today.getFullYear() - birthDate.getFullYear();
+     const monthDiff = today.getMonth() - birthDate.getMonth();
+     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+       age--;
+     }
+     if (age < 0) age = 0;
+     document.getElementById('patientAge').value = age;
+   }
+   
+   // 为出生日期添加blur验证
+   document.getElementById('birthDate').addEventListener('blur', function(e) {
+     const value = e.target.value;
+     const parts = value.split('/');
+     if (parts.length >= 1 && parts[0].length === 4) {
+       const year = parseInt(parts[0]);
+       if (year < 2000 || year > 2500 || isNaN(year)) {
+         alert('请输入有效的出生日期（年份为2000-2500之间的4位数）');
+         e.target.value = '';
+       }
+     }
+   });
+ 
+ function showSection(sectionId) {
+ document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+ document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+ document.getElementById(sectionId).classList.add('active');
+ event.target.classList.add('active');
+ }
+
+  function calculateALCR(al, k) {
+  return (al / (337.5 / k)).toFixed(2);
+  }
+
+  // 获取近视风险等级和样式
+  function getMyopiaRiskStyle(diopter) {
+  const absD = Math.abs(parseFloat(diopter));
+  if (absD <= 3.00) {
+  return { level: '低风险', color: '#000000', class: '' };
+  } else if (absD <= 4.00) {
+  return { level: '中风险', color: '#E65100', class: 'highlight-yellow' };
+  } else if (absD < 6.00) {
+  return { level: '中高风险', color: '#FF8C00', class: 'highlight-orange' };
+  } else {
+  return { level: '高风险', color: '#B71C1C', class: 'highlight-red' };
+  }
+  }
+
+ function getALCRRef(age) {
+ if (age <= 5) return 2.92;
+ if (age <= 9) return 2.99;
+ if (age <= 12) return 3.03;
+ if (age <= 15) return 3.07;
+ return 3.08;
+ }
+
+ function getHyperopiaRef(age) {
+ if (age >= 3 && age <= 5) return "约200~250度";
+ if (age === 6) return "约175~245度";
+ if (age === 7) return "约150~200度";
+ if (age === 8) return "约120~180度";
+ if (age === 9) return "约110~140度";
+ if (age === 10) return "约90~120度";
+ if (age === 11) return "约80~110度";
+ if (age === 12) return "约60~85度";
+ if (age === 13) return "约25~65度";
+ if (age === 14) return "约10~25度";
+ if (age >= 15) return "小于10度";
+ return "约200~250度";
+ }
+
+ function calculateHyperopia(al, k, age) {
+ const alcrRef = getALCRRef(age);
+ const coefficient = age <= 5 ? 1.65 : age <= 9 ? 1.70 : age <= 12 ? 1.90 : 2.10;
+ return ((alcrRef * (337.5 / k) - al) * coefficient).toFixed(2);
+ }
+
+ function calculateCriticalAL(k, age) {
+ const alcrRef = getALCRRef(age);
+ return (alcrRef * (337.5 / k)).toFixed(2);
+ }
+
+ function predictMyopiaTime(al, k, age) {
+ const criticalAL = parseFloat(calculateCriticalAL(k, age));
+ const alRemain = criticalAL - al;
+ if (alRemain <= 0) return 0;
+ let growthRate = age <= 9 ? 0.4 : age <= 12 ? 0.35 : 0.3;
+ return (alRemain / growthRate).toFixed(1);
+ }
+
+ function getAverageAL(age, gender) {
+ const maleData = {3:22.07,4:22.32,5:22.55,6:22.76,7:22.95,8:23.12,9:23.28,10:23.42,11:23.53,12:23.63,13:23.72,14:23.78,15:23.82,16:23.85,17:23.86,18:23.85};
+ const femaleData = {3:21.68,4:21.90,5:22.11,6:22.30,7:22.47,8:22.64,9:22.79,10:22.92,11:23.04,12:23.15,13:23.24,14:23.32,15:23.38,16:23.43,17:23.46,18:23.49};
+ return gender === '男' ? (maleData[age] || 23.5) : (femaleData[age] || 23.5);
+ }
+
+ function predictAdultAL(al, age) {
+ const growthTable = {1:6.1,2:5.5,3:4.9,4:4.4,5:4.9,6:3.5,7:3.1,8:2.8,9:2.5,10:2.2,11:1.9,12:1.6,13:1.3,14:1.0,15:0.8,16:0.6,17:0.4,18:0.2};
+ const growth = growthTable[age] || 0.2;
+ return (al + growth).toFixed(2);
+ }
+
+ function predictAdultDiopter(al, k, age) {
+ const criticalAL = parseFloat(calculateCriticalAL(k, age));
+ const adultAL = parseFloat(predictAdultAL(al, age));
+ const growth = adultAL - al;
+ return ((criticalAL - al) * 2.5 - growth * 2.5).toFixed(2);
+ }
+
+ function getHyperopiaPosition(hyperopia) {
+ if (hyperopia >= 1.0) return 6.25;
+ if (hyperopia >= 0.75) return 18.75;
+ if (hyperopia >= 0.50) return 31.25;
+ if (hyperopia >= 0.25) return 43.75;
+ if (hyperopia >= -3.0) return 56.25;
+ if (hyperopia >= -6.0) return 68.75;
+ if (hyperopia >= -10.0) return 81.25;
+ return 93.75;
+ }
+
+ function generateAnalysis() {
+ calculateAge();
+ 
+ const odAl = parseFloat(document.getElementById('odAl').value);
+ const odK = parseFloat(document.getElementById('odK').value);
+ const osAl = parseFloat(document.getElementById('osAl').value);
+ const osK = parseFloat(document.getElementById('osK').value);
+ 
+ if (!odAl || !odK || !osAl || !osK) {
+ alert('请填写完整的眼轴（AL）和角膜曲率（K）数据！');
+ return;
+ }
+ 
+ const odIntervention = document.getElementById('odIntervention').value || '未干预';
+ const osIntervention = document.getElementById('osIntervention').value || '未干预';
+ 
+  const birthDateMask = document.getElementById('birthDate').value;
+  const reportDateMask = document.getElementById('reportDate').value;
+  
+  const patientData = {
+  name: document.getElementById('patientName').value || '未填写',
+  gender: document.getElementById('patientGender').value,
+  birthDate: getDateFromMask(birthDateMask) || '未填写',
+  age: parseInt(document.getElementById('patientAge').value) || 7,
+  reportDate: getDateFromMask(reportDateMask) || '未填写',
+  institution: document.getElementById('institution').value || '未填写',
+ od: {al: odAl, k: odK, lt: document.getElementById('odLt').value ? parseFloat(document.getElementById('odLt').value) : null, av: document.getElementById('odAv').value ? parseFloat(document.getElementById('odAv').value) : null, intervention: odIntervention},
+ os: {al: osAl, k: osK, lt: document.getElementById('osLt').value ? parseFloat(document.getElementById('osLt').value) : null, av: document.getElementById('osAv').value ? parseFloat(document.getElementById('osAv').value) : null, intervention: osIntervention}
+ };
+
+ const odHyperopia = calculateHyperopia(patientData.od.al, patientData.od.k, patientData.age);
+ const osHyperopia = calculateHyperopia(patientData.os.al, patientData.os.k, patientData.age);
+ 
+ const odAlcr = calculateALCR(patientData.od.al, patientData.od.k);
+ const odAlcrRef = getALCRRef(patientData.age);
+ const odHyperopiaRef = getHyperopiaRef(patientData.age);
+ const odCriticalAL = calculateCriticalAL(patientData.od.k, patientData.age);
+ const odALRemain = (odCriticalAL - patientData.od.al).toFixed(2);
+ const odMyopiaTime = predictMyopiaTime(patientData.od.al, patientData.od.k, patientData.age);
+ const odAvgAL = getAverageAL(patientData.age, patientData.gender);
+ const odALDiff = (patientData.od.al - odAvgAL).toFixed(2);
+ const odAdultAL = predictAdultAL(patientData.od.al, patientData.age);
+ const odAdultDiopter = predictAdultDiopter(patientData.od.al, patientData.od.k, patientData.age);
+
+ const osAlcr = calculateALCR(patientData.os.al, patientData.os.k);
+ const osAlcrRef = getALCRRef(patientData.age);
+ const osHyperopiaRef = getHyperopiaRef(patientData.age);
+ const osCriticalAL = calculateCriticalAL(patientData.os.k, patientData.age);
+ const osALRemain = (osCriticalAL - patientData.os.al).toFixed(2);
+ const osMyopiaTime = predictMyopiaTime(patientData.os.al, patientData.os.k, patientData.age);
+ const osAvgAL = getAverageAL(patientData.age, patientData.gender);
+ const osALDiff = (patientData.os.al - osAvgAL).toFixed(2);
+ const osAdultAL = predictAdultAL(patientData.os.al, patientData.age);
+ const osAdultDiopter = predictAdultDiopter(patientData.os.al, patientData.os.k, patientData.age);
+
+ let odPosition = getHyperopiaPosition(parseFloat(odHyperopia));
+ let osPosition = getHyperopiaPosition(parseFloat(osHyperopia));
+ 
+ const positionDiff = Math.abs(odPosition - osPosition);
+ if (positionDiff < 3) {
+ odPosition += 1.5;
+ osPosition -= 1.5;
+ }
+
+ const reportHTML = `
+ <div class="report-container">
+ <div class="report-header">
+  <h1>${patientData.institution && patientData.institution !== '未填写' ? patientData.institution + ' ' : ''}眼屈光发育状态预测结果报告单</h1>
+ </div>
+ 
+ <div class="patient-info">
+ <div class="info-item"><strong>姓名：</strong>${patientData.name}</div>
+ <div class="info-item"><strong>性别：</strong>${patientData.gender}</div>
+ <div class="info-item"><strong>生日：</strong>${patientData.birthDate || '未填写'}</div>
+ <div class="info-item"><strong>年龄：</strong>${patientData.age}岁</div>
+ <div class="info-item"><strong>报告日期：</strong>${patientData.reportDate}</div>
+ </div>
+
+ <table class="data-table">
+ <thead>
+ <tr><th>眼别</th><th>K值 (D)</th><th>LT (mm)</th><th>AL/CR</th><th>当前AL(mm)</th><th>临界AL(mm)</th><th>轴余 (mm)</th><th>理论近视时间 (年)</th><th>18岁眼轴预测 (mm)</th><th>18岁屈光度预测 (D)</th></tr>
+ </thead>
+ <tbody>
+ <tr><td><strong>OD</strong></td><td>${patientData.od.k}</td><td>${patientData.od.lt === null ? '/' : patientData.od.lt}</td><td>${odAlcr}</td><td>${patientData.od.al}</td><td>${odCriticalAL}</td><td class="${odALRemain < 0 ? 'highlight-red' : ''}">${odALRemain}</td><td>${odMyopiaTime > 0 ? odMyopiaTime : '<span class="highlight-red">已近视</span>'}</td><td>${odAdultAL}</td><td class="${odAdultDiopter <= -6 ? 'highlight-red' : ''}">${odAdultDiopter}</td></tr>
+ <tr><td><strong>OS</strong></td><td>${patientData.os.k}</td><td>${patientData.os.lt === null ? '/' : patientData.os.lt}</td><td>${osAlcr}</td><td>${patientData.os.al}</td><td>${osCriticalAL}</td><td class="${osALRemain < 0 ? 'highlight-red' : ''}">${osALRemain}</td><td>${osMyopiaTime > 0 ? osMyopiaTime : '<span class="highlight-red">已近视</span>'}</td><td>${osAdultAL}</td><td class="${osAdultDiopter <= -6 ? 'highlight-red' : ''}">${osAdultDiopter}</td></tr>
+ </tbody>
+ </table>
+
+ <div class="myopia-scale-container" style="margin: 25px 0 30px 0;">
+<div class="eye-marker" style="left: ${odPosition}%;">
+ <div class="eye-marker-inner">
+ <div class="eye-marker-shape"></div>
+ <div class="eye-label">R</div>
+ </div>
+ <div class="arrow-line"></div>
+ <div class="arrow-down"></div>
+ </div>
+  
+ <div class="eye-marker" style="left: ${osPosition}%;">
+ <div class="eye-marker-inner">
+ <div class="eye-marker-shape"></div>
+ <div class="eye-label">L</div>
+ </div>
+ <div class="arrow-line"></div>
+ <div class="arrow-down"></div>
+ </div>
+ 
+ <div class="myopia-scale" style="margin-top: 20px;">
+ <div class="scale-item scale-1"><div class="label1">远视储备</div><div class="label2">≥+1.00D</div></div>
+ <div class="scale-item scale-2"><div class="label1">近视前期</div><div class="label2">(6岁)+0.75D</div></div>
+ <div class="scale-item scale-3"><div class="label1">近视前期</div><div class="label2">(7-8岁)+0.50D</div></div>
+ <div class="scale-item scale-4"><div class="label1">近视前期</div><div class="label2">(9-10岁)+0.25D</div></div>
+ <div class="scale-item scale-5"><div class="label1">低度近视</div><div class="label2">-3.00D</div></div>
+ <div class="scale-item scale-6"><div class="label1">中度近视</div><div class="label2">-6.00D</div></div>
+ <div class="scale-item scale-7"><div class="label1">高度近视</div><div class="label2">-10.00D</div></div>
+ <div class="scale-item scale-8"><div class="label1">超高度近视</div><div class="label2">&gt;-10.00D</div></div>
+ </div>
+ </div>
+
+ <table class="analysis-table">
+ <thead>
+ <tr><th style="width: 12%;"></th><th style="width: 18%;">分析内容</th><th style="width: 15%;">右眼 (OD)</th><th style="width: 15%;">左眼 (OS)</th><th style="width: 40%;">参考说明</th></tr>
+ </thead>
+ <tbody>
+ <tr><td class="section-title" rowspan="2">一、轴率比分析</td><td class="subsection">同龄轴率比参考</td><td>${odAlcrRef}</td><td>${osAlcrRef}</td><td rowspan="2">轴率比为眼轴与角膜曲率换算值的比值，不同年龄对应不同临界值，当前检测值超过该年龄临界值时提示近视风险</td></tr>
+ <tr><td class="subsection">轴率比</td><td class="${odAlcr >= odAlcrRef ? 'highlight-red' : 'highlight-green'}">${odAlcr}</td><td class="${osAlcr >= osAlcrRef ? 'highlight-red' : 'highlight-green'}">${osAlcr}</td></tr>
+ 
+ <tr><td class="section-title" rowspan="2">二、远视储备分析</td><td class="subsection">同龄远储参考</td><td>${odHyperopiaRef}</td><td>${osHyperopiaRef}</td><td rowspan="2">远视储备随年龄自然减少，数值小于 0 提示近视状态或近视风险</td></tr>
+ <tr><td class="subsection">远视储备值</td><td class="${odHyperopia < 0 ? 'highlight-red' : 'highlight-green'}">${odHyperopia > 0 ? '+' : ''}${odHyperopia}D</td><td class="${osHyperopia < 0 ? 'highlight-red' : 'highlight-green'}">${osHyperopia > 0 ? '+' : ''}${osHyperopia}D</td></tr>
+ 
+ <tr><td class="section-title">三、视疲劳分析</td><td class="subsection">晶体厚度</td><td>${patientData.od.lt === null ? '/' : '<span class="' + getFatigueLevel(patientData.od.lt).class + '">' + getFatigueLevel(patientData.od.lt).level + '</span>'}</td><td>${patientData.os.lt === null ? '/' : '<span class="' + getFatigueLevel(patientData.os.lt).class + '">' + getFatigueLevel(patientData.os.lt).level + '</span>'}</td><td>异常时通过晶体厚度代偿，长期易疲劳，可能间接影响近视进展</td></tr>
+ 
+ <tr><td class="section-title" rowspan="5">四、眼轴分析</td><td class="subsection">当前眼轴</td><td>${patientData.od.al}mm</td><td>${patientData.os.al}mm</td><td>实测眼轴为当前检测的眼轴长度</td></tr>
+ <tr><td class="subsection">临界眼轴</td><td>${odCriticalAL}mm</td><td>${osCriticalAL}mm</td><td>为该年龄段对应的近视临界眼轴长度</td></tr>
+ <tr><td class="subsection">轴余</td><td class="${odALRemain < 0 ? 'highlight-red' : 'highlight-green'}">${odALRemain}mm</td><td class="${osALRemain < 0 ? 'highlight-red' : 'highlight-green'}">${osALRemain}mm</td><td>眼轴余量越少，近视发生、加深风险越高</td></tr>
+ <tr><td class="subsection">同龄人对比</td><td><span class="${parseFloat(odALDiff) > 0 ? 'highlight-red' : parseFloat(odALDiff) < 0 ? 'highlight-green' : ''}">${parseFloat(odALDiff) > 0 ? '长' : parseFloat(odALDiff) < 0 ? '短' : ''}${parseFloat(odALDiff) === 0 ? '0' : Math.abs(parseFloat(odALDiff)).toFixed(2)}mm</span></td><td><span class="${parseFloat(osALDiff) > 0 ? 'highlight-red' : parseFloat(osALDiff) < 0 ? 'highlight-green' : ''}">${parseFloat(osALDiff) > 0 ? '长' : parseFloat(osALDiff) < 0 ? '短' : ''}${parseFloat(osALDiff) === 0 ? '0' : Math.abs(parseFloat(osALDiff)).toFixed(2)}mm</span></td><td>与同性别同龄人眼轴平均水平的偏差情况</td></tr>
+ <tr><td class="subsection">预计近视时间</td><td>${odMyopiaTime > 0 ? '<span class="highlight-green">' + odMyopiaTime + '年后</span>' : '<span class="highlight-red">已近视</span>'}</td><td>${osMyopiaTime > 0 ? '<span class="highlight-green">' + osMyopiaTime + '年后</span>' : '<span class="highlight-red">已近视</span>'}</td><td>基于大数据统计的儿童眼轴发育趋势预测</td></tr>
+ 
+ <tr><td class="section-title" rowspan="3">五、高度近视风险</td><td class="subsection">未干预18岁时眼轴长约</td><td>${odAdultAL}mm</td><td>${osAdultAL}mm</td><td rowspan="2">若未进行有效干预，18 岁时的眼轴和屈光度可能达到的水平</td></tr>
+  <tr><td class="subsection">未干预18岁时屈光度约</td><td class="${getMyopiaRiskStyle(odAdultDiopter).class}" style="${getMyopiaRiskStyle(odAdultDiopter).color ? 'color:' + getMyopiaRiskStyle(odAdultDiopter).color : ''}">${odAdultDiopter}D</td><td class="${getMyopiaRiskStyle(osAdultDiopter).class}" style="${getMyopiaRiskStyle(osAdultDiopter).color ? 'color:' + getMyopiaRiskStyle(osAdultDiopter).color : ''}">${osAdultDiopter}D</td></tr>
+  <tr><td class="subsection">高度近视风险分析</td><td class="${getMyopiaRiskStyle(odAdultDiopter).class}" style="${getMyopiaRiskStyle(odAdultDiopter).color ? 'color:' + getMyopiaRiskStyle(odAdultDiopter).color : ''}">${getMyopiaRiskStyle(odAdultDiopter).level}</td><td class="${getMyopiaRiskStyle(osAdultDiopter).class}" style="${getMyopiaRiskStyle(osAdultDiopter).color ? 'color:' + getMyopiaRiskStyle(osAdultDiopter).color : ''}">${getMyopiaRiskStyle(osAdultDiopter).level}</td><td>18 岁屈光度近视风险分级评估</td></tr>
+ 
+ <tr><td class="section-title" rowspan="2">六、控制目标</td><td class="subsection">眼轴年平均增长不超过</td><td>${getGrowthControlTarget(patientData.age)}</td><td>${getGrowthControlTarget(patientData.age)}</td><td rowspan="2">眼轴年平均增长控制在安全增长区间，有助于降低近视进展风险</td></tr>
+ <tr><td class="subsection">眼轴1年增速</td><td>${patientData.od.av ? (() => { const annualGrowth = patientData.od.av * 12; const controlTarget = getGrowthControlValue(patientData.age); return annualGrowth > controlTarget ? '<span class="highlight-red">' + annualGrowth.toFixed(2) + 'mm/年</span>' : annualGrowth.toFixed(2) + 'mm/年'; })() : '/'}</td><td>${patientData.os.av ? (() => { const annualGrowth = patientData.os.av * 12; const controlTarget = getGrowthControlValue(patientData.age); return annualGrowth > controlTarget ? '<span class="highlight-red">' + annualGrowth.toFixed(2) + 'mm/年</span>' : annualGrowth.toFixed(2) + 'mm/年'; })() : '/'}</td></tr>
+ </tbody>
+ </table>
+
+ <div class="chart-grid">
+ <div class="chart-box"><h3>👁️ 右眼：未干预18岁眼轴发育状态预测</h3><canvas id="odChart"></canvas><div class="legend-box" style="margin-top: 4px;"><div class="legend-item"><div class="legend-color" style="background: #B0B0B0;"></div><span style="font-size: 10pt; color: #000; font-weight: bold;">同年龄同性别平均眼轴</span></div><div class="legend-item"><div class="legend-color" style="background: #B71C1C;"></div><span style="font-size: 10pt; color: #000; font-weight: bold;">未干预眼轴发育预测</span></div></div></div>
+ <div class="chart-box"><h3>👁️ 左眼：未干预18岁眼轴发育状态预测</h3><canvas id="osChart"></canvas><div class="legend-box" style="margin-top: 4px;"><div class="legend-item"><div class="legend-color" style="background: #B0B0B0;"></div><span style="font-size: 10pt; color: #000; font-weight: bold;">同年龄同性别平均眼轴</span></div><div class="legend-item"><div class="legend-color" style="background: #B71C1C;"></div><span style="font-size: 10pt; color: #000; font-weight: bold;">未干预眼轴发育预测</span></div></div></div>
+ </div>
+
+ <div class="annual-control-page" style="margin-top: 1px;">
+ <div class="chart-grid">
+  <div class="chart-box" style="height: 280px; display: flex; flex-direction: column;"><h3 style="text-align: left; margin-bottom: 2px; font-size: 14pt;">👁️ 右眼：1年眼轴预测${patientData.od.intervention ? ' <small style="font-size: 11pt; color: #666;">(' + patientData.od.intervention + ')</small>' : ''}</h3><div style="flex: 1; position: relative;"><canvas id="annualALChart_od" style="max-height: 220px;"></canvas></div><div id="annualLegend_od" style="margin-top: 3px; font-size: 12px; color: #333; text-align: center; font-weight: bold;"></div></div>
+  <div class="chart-box" style="height: 280px; display: flex; flex-direction: column;"><h3 style="text-align: left; margin-bottom: 2px; font-size: 14pt;">👁️ 左眼：1年眼轴预测${patientData.os.intervention ? ' <small style="font-size: 11pt; color: #666;">(' + patientData.os.intervention + ')</small>' : ''}</h3><div style="flex: 1; position: relative;"><canvas id="annualALChart_os" style="max-height: 220px;"></canvas></div><div id="annualLegend_os" style="margin-top: 3px; font-size: 12px; color: #333; text-align: center; font-weight: bold;"></div></div>
+ </div>
+ </div>
+
+ <div class="notes" style="font-size: 7pt; padding: 2px 4px; margin-top: 0px;">
+ <h4 style="font-size: 8pt; margin-bottom: 3px;">标注：</h4>
+ <p style="margin: 1px 0;">1、OD代表右眼，OS代表左眼。AL/CR（轴率比）即眼轴长度与平均角膜曲率半径的比值，该指标联合裸眼视力低于0.8时，可在不进行散瞳验光的情况下，对85%的近视儿童作出准确判断。</p>
+ <p style="margin: 1px 0;">2、本报告结果基于儿童的年龄、性别，通过智能大数据对比分析得出，仅供参考。所有临床干预方案均需结合个体实际情况，经专业全面检查后制定。</p>
+
+ <p style="margin: 1px 0;">3、数据参考：《近视管理白皮书（2025）》《儿童青少年裸眼视力和屈光状态评价规范（WS/T 10039-2025）》</p>
+ </div>
+ </div>
+ `;
+
+ document.getElementById('professionalReport').innerHTML = reportHTML;
+ 
+ const defaultMonthlyGrowth = getDefaultAnnualGrowth(patientData.age) / 12;
+ let odMonthlyGrowth = patientData.od.av || defaultMonthlyGrowth;
+ let osMonthlyGrowth = patientData.os.av || defaultMonthlyGrowth;
+ 
+ if (isNaN(odMonthlyGrowth) || odMonthlyGrowth === null || odMonthlyGrowth === undefined) odMonthlyGrowth = defaultMonthlyGrowth;
+ if (isNaN(osMonthlyGrowth) || osMonthlyGrowth === null || osMonthlyGrowth === undefined) osMonthlyGrowth = defaultMonthlyGrowth;
+ 
+ const odSingleLightData = calculateSingleLightData(patientData.od.al, odMonthlyGrowth);
+ const osSingleLightData = calculateSingleLightData(patientData.os.al, osMonthlyGrowth);
+ const unifiedYRange = calculateSingleLightYRange(patientData.od.al, odSingleLightData, patientData.os.al, osSingleLightData);
+ 
+ requestAnimationFrame(() => {
+ drawEyeChart('odChart', patientData.od.al, patientData.age, patientData.gender);
+ drawEyeChart('osChart', patientData.os.al, patientData.age, patientData.gender);
+ drawSingleLightChart('annualALChart_od', 'annualLegend_od', patientData.od.al, odSingleLightData, unifiedYRange, odMonthlyGrowth, '右眼', patientData.od.intervention);
+ drawSingleLightChart('annualALChart_os', 'annualLegend_os', patientData.os.al, osSingleLightData, unifiedYRange, osMonthlyGrowth, '左眼', patientData.os.intervention);
+ });
+
+ showSection('report-preview');
+ }
+
+ function getGrowthControlTarget(age) {
+ if (age >= 3 && age <= 5) return "≤0.25mm/年";
+ if (age >= 6 && age <= 10) return "≤0.20mm/年";
+ return "<0.20mm/年";
+ }
+
+ function getGrowthControlValue(age) {
+ if (age >= 3 && age <= 5) return 0.25;
+ if (age >= 6 && age <= 10) return 0.20;
+ return 0.15;
+ }
+
+ function calculateTargetAL(currentAL, currentAge, targetAge) {
+ let targetAL = currentAL;
+ for (let age = currentAge + 1; age <= targetAge; age++) {
+ targetAL = parseFloat((targetAL + getControlTargetGrowth(age)).toFixed(2));
+ }
+ return targetAL.toFixed(2);
+ }
+
+ function getFatigueLevel(lt) {
+ if (lt >= 2.5 && lt <= 3.5) return { level: '正常', class: 'highlight-green' };
+ if (lt > 3.5 && lt < 4.0) return { level: '轻度', class: 'highlight-red' };
+ if (lt >= 4.0 && lt <= 4.5) return { level: '中度', class: 'highlight-red' };
+ if (lt >= 4.6) return { level: '重度', class: 'highlight-red' };
+ return { level: '数据异常', class: 'highlight-red' };
+ }
+
+ function calculateALForDiopter(k, age, hyperopia) {
+ const alcrRef = getALCRRef(age);
+ const coefficient = age <= 5 ? 1.65 : age <= 9 ? 1.70 : age <= 12 ? 1.90 : 2.10;
+ const al = alcrRef * (337.5 / k) - (hyperopia / coefficient);
+ return al.toFixed(2);
+ }
+
+ function getAnnualGrowth(age) {
+ const growthTable = {3:0,4:0.5,5:0.4,6:0.4,7:0.4,8:0.3,9:0.3,10:0.3,11:0.3,12:0.3,13:0.3,14:0.3,15:0.2,16:0.2,17:0.2,18:0.2};
+ return growthTable[age] || 0.2;
+ }
+
+ function getDefaultAnnualGrowth(age) {
+ const annualGrowthTable = {3:0,4:0.5,5:0.4,6:0.4,7:0.4,8:0.3,9:0.3,10:0.3,11:0.3,12:0.3,13:0.3,14:0.3,15:0.2,16:0.2,17:0.2,18:0.2};
+ return annualGrowthTable[age] || 0.2;
+ }
+
+ function getControlTargetGrowth(age) {
+ const controlGrowthTable = {3:0,4:0.4,5:0.4,6:0.3,7:0.2,8:0.2,9:0.15,10:0.15,11:0.1,12:0.1,13:0.1,14:0.1,15:0.1,16:0.1,17:0.1,18:0.1};
+ return controlGrowthTable[age] || 0.1;
+ }
+
+ function isPrintMode() {
+ return window.matchMedia('print').matches;
+ }
+
+ function printReport() {
+ const patientName = document.getElementById('patientName').value || '未填写';
+ const now = new Date();
+ const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+ const originalTitle = document.title;
+ document.title = patientName + '-眼屈光发育状态预测（' + dateStr + '）';
+ window.print();
+ setTimeout(() => { document.title = originalTitle; }, 100);
+ }
+
+ const controlEffectiveness = {
+ singleLight: 0, defocus: 0.52, dot: 0.59, doubleControl: 0.70, defocusSoft: 0.50, okLens: 0.65,
+ visionTraining: 0.60, redLight: 0.70, lowAtropine: 0.55, outdoor2h: 0.45, outdoor: 0.35, distance: 0.40, fogVision: 0.45, trainingRedLight: 0.75
+ };
+
+ function calculateControlDataForEye(baselineAL, monthlyGrowth) {
+ const eyeControlData = {};
+ Object.keys(controlMethodsData).forEach(key => {
+ const effectiveness = controlEffectiveness[key] || 0;
+ const remainingGrowth = 1 - effectiveness;
+ const data = [];
+ for (let month = 0; month <= 12; month += 3) {
+ const al = baselineAL + (monthlyGrowth * remainingGrowth * month);
+ data.push(parseFloat(al.toFixed(2)));
+ }
+ eyeControlData[key] = { name: controlMethodsData[key].name, color: controlMethodsData[key].color, data: data };
+ });
+ return eyeControlData;
+ }
+
+function calculateSingleLightData(baselineAL, monthlyGrowth) {
+   const data = [];
+   if (isNaN(baselineAL) || baselineAL === null || baselineAL === undefined) return [0, 0, 0, 0, 0];
+   if (isNaN(monthlyGrowth) || monthlyGrowth === null || monthlyGrowth === undefined) monthlyGrowth = 0.03;
+   for (let month = 0; month <= 12; month += 3) {
+   const al = baselineAL + (monthlyGrowth * month);
+   // 保留4位小数精度，parseFloat会自动去掉末尾的0
+   data.push(parseFloat(al.toFixed(4)));
+   }
+   return data;
+   }
+
+ function calculateSingleLightYRange(odBaselineAL, odData, osBaselineAL, osData) {
+ let minValue = Math.min(odBaselineAL, osBaselineAL, ...odData, ...osData);
+ let maxValue = Math.max(odBaselineAL, osBaselineAL, ...odData, ...osData);
+ const range = maxValue - minValue;
+ const padding = range * 0.3;
+ return { min: Math.floor((minValue - padding) * 10) / 10, max: Math.ceil((maxValue + padding) * 10) / 10 };
+ }
+
+ function calculateSingleEyeYRange(baselineAL, data) {
+ const validData = data.filter(v => !isNaN(v) && v !== null && v !== undefined);
+ if (validData.length === 0) return { min: Math.floor((baselineAL - 0.5) * 10) / 10, max: Math.ceil((baselineAL + 0.5) * 10) / 10 };
+ let minValue = Math.min(baselineAL, ...validData);
+ let maxValue = Math.max(baselineAL, ...validData);
+ if (minValue === maxValue) { minValue -= 0.2; maxValue += 0.2; }
+ const padding = (maxValue - minValue) * 0.15;
+ return { min: Math.floor((minValue - padding) * 10) / 10, max: Math.ceil((maxValue + padding) * 10) / 10 };
+ }
+
+ function calculateUnifiedYRange(odBaselineAL, odControlData, osBaselineAL, osControlData) {
+ let minValue = Math.min(odBaselineAL, osBaselineAL);
+ let maxValue = Math.max(odBaselineAL, osBaselineAL);
+ const allData = [...Object.values(odControlData), ...Object.values(osControlData)];
+ allData.forEach(method => {
+ if (method && method.data) method.data.forEach(val => { minValue = Math.min(minValue, val); maxValue = Math.max(maxValue, val); });
+ });
+ const padding = (maxValue - minValue) * 0.1;
+ return { min: Math.floor((minValue - padding) * 10) / 10, max: Math.ceil((maxValue + padding) * 10) / 10 };
+ }
+
+ const controlMethodsData = {
+ singleLight: { name: '单光镜', color: '#C23531', data: [] },
+ defocus: { name: '离焦镜', color: '#2F4554', data: [] },
+ dot: { name: '点扩散', color: '#91C7AE', data: [] },
+ doubleControl: { name: '双控镜', color: '#CA8622', data: [] },
+ okLens: { name: 'OK镜', color: '#BDA29A', data: [] },
+ defocusSoft: { name: '离焦软镜', color: '#6E7074', data: [] },
+ visionTraining: { name: '防控镜+视训', color: '#546570', data: [] },
+ redLight: { name: '防控镜+红光', color: '#C4CCD3', data: [] },
+ lowAtropine: { name: '防控镜+0.01%低阿', color: '#F05B72', data: [] },
+ outdoor2h: { name: '防控镜+户外2h', color: '#EF5B9C', data: [] },
+ outdoor: { name: '防控镜+户外', color: '#F47920', data: [] },
+ distance: { name: '防控镜+拉远', color: '#905A3D', data: [] },
+ fogVision: { name: '防控镜+远像雾视', color: '#FAB27B', data: [] },
+ trainingRedLight: { name: '防控镜+视训+红光', color: '#2A5CAA', data: [] }
+ };
+
+ let annualALChartInstance = null;
+
+ function drawSingleLightChart(canvasId, legendId, currentAL, data, unifiedYRange, monthlyGrowth, eyeLabel, intervention) {
+ const ctx = document.getElementById(canvasId);
+ if (!ctx) { console.error('Canvas not found:', canvasId); return; }
+ if (!data || data.length === 0 || data.some(v => isNaN(v))) { console.error('Invalid data for', eyeLabel, data); return; }
+ const existingChart = Chart.getChart(ctx);
+ if (existingChart) existingChart.destroy();
+ 
+ let yMin, yMax;
+ if (unifiedYRange && !isNaN(unifiedYRange.min) && !isNaN(unifiedYRange.max)) {
+ yMin = unifiedYRange.min;
+ yMax = unifiedYRange.max;
+ } else {
+ const validData = data.filter(v => !isNaN(v));
+ const dataMin = Math.min(...validData);
+ const dataMax = Math.max(...validData);
+ const range = dataMax - dataMin;
+ yMin = Math.floor((dataMin - range * 0.3) * 10) / 10;
+ yMax = Math.ceil((dataMax + range * 0.3) * 10) / 10;
+ }
+ 
+   // 根据月增速确定小数位数
+   function getDecimalPlaces(growth) {
+   if (growth >= 0.01) return 2;
+   if (growth >= 0.001) return 3;
+   return 4;
+   }
+   const decimalPlaces = getDecimalPlaces(monthlyGrowth);
+   
+   // 根据干预方式生成图表标签
+   const chartLabel = intervention || '单光镜（未干预）';
+
+   new Chart(ctx.getContext('2d'), {
+   type: 'line',
+   data: {
+   labels: ['0个月', '3个月', '6个月', '9个月', '12个月'],
+   datasets: [{ label: chartLabel, data: data, borderColor: '#C23531', backgroundColor: '#C2353120', borderWidth: 2, pointRadius: 5, pointBackgroundColor: '#C23531', tension: 0.3 }]
+   },
+   options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+   legend: { display: false },
+   tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y.toFixed(decimalPlaces) + 'mm'; } } }
+   },
+    scales: {
+     y: { min: yMin, max: yMax, title: { display: true, text: '眼轴长度 (mm)', font: { size: 14, weight: 'bold' }, color: '#000' }, ticks: { font: { size: 13, weight: 'bold' }, color: '#000', stepSize: 0.1 } },
+     x: { ticks: { font: { size: 12, weight: 'bold' }, color: '#000', autoSkip: false } }
+    }
+   },
+   plugins: [{
+afterDatasetsDraw: function(chart) {
+     const ctx = chart.ctx;
+     ctx.save();
+     ctx.font = 'bold 12px Microsoft YaHei';
+     ctx.fillStyle = '#B71C1C';
+     ctx.textAlign = 'center';
+     ctx.textBaseline = 'bottom';
+     chart.data.datasets.forEach((dataset, i) => {
+     const meta = chart.getDatasetMeta(i);
+     meta.data.forEach((point, index) => {
+     ctx.fillText(dataset.data[index].toFixed(decimalPlaces), point.x, point.y - 8);
+     });
+     });
+     ctx.restore();
+     }
+   }]
+   });
+ 
+    const legendContainer = document.getElementById(legendId);
+     if (legendContainer) legendContainer.innerHTML = `<span style="font-weight: bold; font-size: 12pt; color: #000;">${eyeLabel}起始眼轴：${currentAL.toFixed(decimalPlaces)}mm</span>，<span style="font-size: 12pt; color: #000;">月增速：${parseFloat(monthlyGrowth.toFixed(4))}mm</span>`;
+    }
+
+ function updateAnnualALLegend(datasets) {
+ const legendContainer = document.getElementById('annualALLegend');
+ if (!legendContainer) return;
+ legendContainer.innerHTML = datasets.map(ds => `<div class="legend-item"><div class="legend-color" style="background: ${ds.borderColor};"></div><span>${ds.label}</span></div>`).join('');
+ }
+
+ function drawEyeChart(canvasId, currentAL, currentAge, gender) {
+ const ctx = document.getElementById(canvasId).getContext('2d');
+ 
+ const labels = [];
+ const avgData = [];
+ const noControlData = [];
+ let maxValue = 26;
+ 
+ let accumulatedAL = currentAL;
+ let accumulatedTargetAL = currentAL;
+ 
+ for (let age = 3; age <= 18; age++) {
+ labels.push(age + '岁');
+ const avgAL = getAverageAL(age, gender);
+ avgData.push(avgAL);
+ maxValue = Math.max(maxValue, avgAL);
+ 
+ if (age === currentAge) {
+ noControlData.push(currentAL);
+ maxValue = Math.max(maxValue, currentAL);
+ } else if (age > currentAge) {
+ accumulatedAL = parseFloat((accumulatedAL + getAnnualGrowth(age)).toFixed(2));
+ noControlData.push(accumulatedAL);
+ maxValue = Math.max(maxValue, accumulatedAL);
+ } else {
+ noControlData.push(null);
+ }
+ }
+ 
+ const yMax = Math.ceil(maxValue) + 1;
+ const yMin = 20;
+ 
+ new Chart(ctx, {
+ type: 'line',
+ data: {
+ labels: labels,
+ datasets: [
+{ label: '同年龄同性别平均眼轴', data: avgData, borderColor: '#B0B0B0', backgroundColor: 'transparent', borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#B0B0B0' },
+  { label: '未干预眼轴发育预测', data: noControlData, borderColor: '#B71C1C', backgroundColor: 'transparent', borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#B71C1C' }
+ ]
+ },
+ options: {
+ responsive: true,
+ maintainAspectRatio: false,
+ layout: {
+  padding: {
+   top: 30,
+   right: 30,
+   bottom: 10,
+   left: 10
+  }
+ },
+ plugins: { legend: { display: false }, datalabels: { display: false } },
+  scales: {
+   y: { min: yMin, max: yMax, title: { display: true, text: '眼轴长度 (mm)', font: { size: 14, weight: 'bold' }, color: '#000' }, ticks: { stepSize: 1, font: { size: 13, weight: 'bold' }, color: '#000' } },
+   x: { ticks: { font: { size: 12, weight: 'bold' }, color: '#000', maxRotation: 45, autoSkip: false } }
+  }
+ },
+ plugins: [{
+ afterDatasetsDraw: function(chart) {
+ const ctx = chart.ctx;
+ ctx.save();
+ const chartHeight = chart.chartArea.bottom - chart.chartArea.top;
+ const isCompact = chartHeight < 150;
+ 
+ chart.data.datasets.forEach((dataset, datasetIndex) => {
+ const meta = chart.getDatasetMeta(datasetIndex);
+ if (meta.hidden) return;
+ 
+ meta.data.forEach((point, index) => {
+ const value = dataset.data[index];
+ if (value === null || value === undefined) return;
+ 
+ let color, fontSize, offsetX, offsetY;
+ 
+if (datasetIndex === 0) {
+  color = '#666666';
+  fontSize = isCompact ? '8px' : '11px';
+  offsetX = 0;
+  offsetY = isCompact ? 25 : 30;
+  } else if (datasetIndex === 1) {
+  color = '#B71C1C';
+  fontSize = isCompact ? '9px' : '12px';
+  offsetX = 0;
+  offsetY = isCompact ? -18 : -22;
+  }
+ 
+ctx.font = 'bold ' + (isCompact ? '9px' : '12px') + ' Microsoft YaHei';
+  ctx.fillStyle = color;
+  ctx.save();
+  ctx.translate(point.x + offsetX, point.y + offsetY);
+  ctx.rotate(-Math.PI / 4);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(value.toFixed(2), 0, 0);
+  ctx.restore();
+ });
+ });
+ ctx.restore();
+ }
+ }]
+ });
+ }
+ </script>
+</body>
+</html>
